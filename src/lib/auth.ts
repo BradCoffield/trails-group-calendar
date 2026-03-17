@@ -1,15 +1,12 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 
 export type UserRole = "admin" | "contributor" | null;
 
-interface PublicMetadata {
-  role?: "admin" | "contributor";
-}
-
 export async function getUserRole(): Promise<UserRole> {
-  const { sessionClaims } = await auth();
-  const publicMetadata = sessionClaims?.publicMetadata as PublicMetadata | undefined;
-  const role = publicMetadata?.role;
+  const user = await currentUser();
+  if (!user) return null;
+
+  const role = user.publicMetadata?.role as string | undefined;
   if (role === "admin") return "admin";
   if (role === "contributor") return "contributor";
   return null;

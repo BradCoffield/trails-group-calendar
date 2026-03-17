@@ -1,41 +1,35 @@
-import { NextRequest } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { db } from '@/db';
-import { events } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { corsResponse, corsOptionsResponse } from '@/lib/cors';
-import { isAdmin } from '@/lib/auth';
+import { NextRequest } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
+import { db } from "@/db";
+import { events } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { corsResponse, corsOptionsResponse } from "@/lib/cors";
 
 export async function OPTIONS() {
   return corsOptionsResponse();
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return corsResponse({ error: 'Unauthorized' }, 401);
+    const user = await currentUser();
+    if (!user) {
+      return corsResponse({ error: "Unauthorized" }, 401);
     }
 
     const { id } = await params;
 
-    const [existingEvent] = await db
-      .select()
-      .from(events)
-      .where(eq(events.id, id));
+    const [existingEvent] = await db.select().from(events).where(eq(events.id, id));
 
     if (!existingEvent) {
-      return corsResponse({ error: 'Event not found' }, 404);
+      return corsResponse({ error: "Event not found" }, 404);
     }
 
-    const userIsAdmin = await isAdmin();
-    const isOwner = existingEvent.submittedByUserId === userId;
+    const role = user.publicMetadata?.role as string | undefined;
+    const userIsAdmin = role === "admin";
+    const isOwner = existingEvent.submittedByUserId === user.id;
 
     if (!userIsAdmin && !isOwner) {
-      return corsResponse({ error: 'Forbidden' }, 403);
+      return corsResponse({ error: "Forbidden" }, 403);
     }
 
     const body = await request.json();
@@ -73,44 +67,42 @@ export async function PUT(
 
     return corsResponse(updatedEvent);
   } catch (error) {
-    console.error('Error updating event:', error);
-    return corsResponse({ error: 'Failed to update event' }, 500);
+    console.error("Error updating event:", error);
+    return corsResponse({ error: "Failed to update event" }, 500);
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return corsResponse({ error: 'Unauthorized' }, 401);
+    const user = await currentUser();
+    if (!user) {
+      return corsResponse({ error: "Unauthorized" }, 401);
     }
 
     const { id } = await params;
 
-    const [existingEvent] = await db
-      .select()
-      .from(events)
-      .where(eq(events.id, id));
+    const [existingEvent] = await db.select().from(events).where(eq(events.id, id));
 
     if (!existingEvent) {
-      return corsResponse({ error: 'Event not found' }, 404);
+      return corsResponse({ error: "Event not found" }, 404);
     }
 
-    const userIsAdmin = await isAdmin();
-    const isOwner = existingEvent.submittedByUserId === userId;
+    const role = user.publicMetadata?.role as string | undefined;
+    const userIsAdmin = role === "admin";
+    const isOwner = existingEvent.submittedByUserId === user.id;
 
     if (!userIsAdmin && !isOwner) {
-      return corsResponse({ error: 'Forbidden' }, 403);
+      return corsResponse({ error: "Forbidden" }, 403);
     }
 
     await db.delete(events).where(eq(events.id, id));
 
     return corsResponse({ success: true });
   } catch (error) {
-    console.error('Error deleting event:', error);
-    return corsResponse({ error: 'Failed to delete event' }, 500);
+    console.error("Error deleting event:", error);
+    return corsResponse({ error: "Failed to delete event" }, 500);
   }
 }

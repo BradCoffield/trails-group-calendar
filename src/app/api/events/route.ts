@@ -1,10 +1,9 @@
 import { NextRequest } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { events } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { corsResponse, corsOptionsResponse } from "@/lib/cors";
-import { getCurrentUserInfo, getUserRole } from "@/lib/auth";
 
 export async function OPTIONS() {
   return corsOptionsResponse();
@@ -57,15 +56,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const user = await currentUser();
+    if (!user) {
       return corsResponse({ error: "Unauthorized" }, 401);
     }
 
-    const userInfo = await getCurrentUserInfo();
-    if (!userInfo) {
-      return corsResponse({ error: "User not found" }, 404);
-    }
+    const userName =
+      user.firstName && user.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user.emailAddresses[0]?.emailAddress || "Unknown User";
 
     const body = await request.json();
     const { title, start_time, end_time, all_day, description, location, submitted_by_org, color } =
@@ -75,7 +74,7 @@ export async function POST(request: NextRequest) {
       return corsResponse({ error: "Title and start time are required" }, 400);
     }
 
-    const role = await getUserRole();
+    const role = user.publicMetadata?.role as string | undefined;
     const shouldAutoApprove = role === "admin";
 
     const [newEvent] = await db
@@ -87,8 +86,8 @@ export async function POST(request: NextRequest) {
         allDay: all_day || false,
         description: description || null,
         location: location || null,
-        submittedByUserId: userInfo.id,
-        submittedByName: userInfo.name,
+        submittedByUserId: user.id,
+        submittedByName: userName,
         submittedByOrg: submitted_by_org || null,
         color: color || "#00a99d",
         approved: shouldAutoApprove,
