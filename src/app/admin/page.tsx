@@ -5,7 +5,9 @@ import { useUser, SignInButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { PendingEventsTable, AllEventsTable } from "@/components/admin";
 
-type Tab = "pending" | "all";
+import { EventForm } from "@/components/dashboard";
+
+type Tab = "pending" | "all" | "create";
 
 export default function AdminPage() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -94,19 +96,53 @@ export default function AdminPage() {
             >
               All Events
             </button>
+            <button
+              onClick={() => setActiveTab("create")}
+              className={`pb-3 text-sm font-medium ${
+                activeTab === "create"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              + Create Event
+            </button>
           </nav>
         </div>
 
         <div className="rounded-lg bg-white p-6 shadow">
-          {activeTab === "pending" ? (
+          {activeTab === "pending" && (
             <div>
               <h2 className="mb-4 text-lg font-medium text-gray-900">Events Pending Approval</h2>
               <PendingEventsTable />
             </div>
-          ) : (
+          )}
+          {activeTab === "all" && (
             <div>
               <h2 className="mb-4 text-lg font-medium text-gray-900">All Events</h2>
               <AllEventsTable />
+            </div>
+          )}
+          {activeTab === "create" && (
+            <div>
+              <h2 className="mb-4 text-lg font-medium text-gray-900">Create New Event</h2>
+              <p className="mb-6 text-sm text-gray-600">
+                Events created by admins are automatically approved.
+              </p>
+              <EventForm
+                onSubmit={async (data) => {
+                  const response = await fetch("/api/events", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                  });
+                  if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || "Failed to create event");
+                  }
+                  setActiveTab("all");
+                }}
+                submitLabel="Create Event"
+              />
             </div>
           )}
         </div>
