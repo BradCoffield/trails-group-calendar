@@ -1,120 +1,204 @@
-# TRAILS Simple Group Calendar
+# TRAILS Community Events Calendar
 
-A full-stack event calendar application for the TRAILS library consortia. Built with Next.js, Neon (PostgreSQL), Clerk authentication, and FullCalendar.
+A shared calendar for TRAILS library consortia members to post and discover community events. Anyone can submit events, and administrators review them before they appear on the public calendar.
 
-## Features
+---
 
-- **Public Calendar** — Embeddable calendar view with month, week, and list views
-- **Event Submission** — Authenticated users can submit events for approval
-- **Admin Approval** — Admins can approve, edit, or reject submitted events
-- **Role-Based Access** — Admin and contributor roles via Clerk metadata
+## 📅 For Event Submitters (Non-Technical Guide)
 
-## Tech Stack
+### How to Submit an Event
 
-- **Framework**: Next.js 14+ (App Router, TypeScript)
-- **Database**: Neon (serverless PostgreSQL) with Drizzle ORM
-- **Auth**: Clerk
-- **Calendar**: FullCalendar.io
-- **Styling**: Tailwind CSS
+1. **Go to the calendar** at your organization's calendar URL
+2. **Click "Submit Event"** (green button in the top right)
+3. **Fill out the form:**
+   - **Title** — Name of your event
+   - **Start/End Date & Time** — When it happens (end time auto-fills to 1 hour later)
+   - **Location** — Where it's held
+   - **Your Name & Email** — So we know who submitted it
+   - **Organization** — Your library or organization name
+   - **Description** — Details about the event
+   - **Color** — Pick a color for the calendar display
+4. **Click "Submit for Review"**
 
-## Setup
+Your event will be reviewed by an administrator. Once approved, it will appear on the public calendar.
 
-### 1. Environment Variables
+### Tips for Good Event Submissions
 
-Copy `.env.example` to `.env.local` and fill in your values:
+- Use clear, descriptive titles (e.g., "Summer Reading Kickoff Party" not just "Party")
+- Include the full address in the location field
+- Add a description with any details attendees need to know
+- Double-check your dates and times before submitting
 
-```bash
-cp .env.example .env.local
-```
+---
 
-Required variables:
+## 👩‍💼 For Administrators
 
-- `DATABASE_URL` — Neon connection string
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk publishable key
-- `CLERK_SECRET_KEY` — Clerk secret key
+### Getting Admin Access
 
-### 2. Database Setup
+Contact your TRAILS administrator to be granted admin privileges. They will update your account in the Clerk dashboard.
 
-Run the schema against your Neon database:
+### Managing Events
 
-```bash
-# Option 1: Using Neon SQL Editor
-# Copy contents of schema.sql and run in Neon console
+1. **Sign in** at `/sign-in` with your admin account
+2. **Go to Admin Panel** at `/admin`
+3. You'll see three tabs:
+   - **Pending** — Events waiting for approval
+   - **All Events** — Every event in the system
+   - **Create Event** — Add events directly (auto-approved)
 
-# Option 2: Using psql
-psql $DATABASE_URL -f schema.sql
+### Approving Events
 
-# Option 3: Using Drizzle (after setting DATABASE_URL)
-npx drizzle-kit push
-```
+1. Click the **Pending** tab
+2. Review each submission
+3. Click **Approve** to publish it to the calendar
+4. Click **Reject** to remove it (submitter is not notified)
 
-### 3. Run Development Server
+### Editing Events
 
-```bash
-npm install
-npm run dev
-```
+- Click **Edit** on any event to modify details
+- Changes take effect immediately
+- You can change the approval status of any event
 
-Open [http://localhost:3000](http://localhost:3000) to view the calendar.
-
-## User Roles
-
-### Promoting a User to Admin
+### Inviting Contributors
 
 1. Go to [Clerk Dashboard](https://dashboard.clerk.com)
-2. Navigate to **Users** → select the user
-3. Click **Metadata** tab
-4. Set `publicMetadata` to:
-   ```json
-   { "role": "admin" }
-   ```
-5. Save changes
+2. Click **Users** → **Invite User**
+3. Enter their email address
+4. After they sign up, optionally set their role (see Technical section)
 
-### Role Capabilities
+---
 
-| Role        | Submit Events | Edit Own Events | Approve Events | Edit All Events |
-| ----------- | ------------- | --------------- | -------------- | --------------- |
-| Guest       | ❌            | ❌              | ❌             | ❌              |
-| Contributor | ✅            | ✅              | ❌             | ❌              |
-| Admin       | ✅            | ✅              | ✅             | ✅              |
+## 🌐 Embedding the Calendar
 
-Note: Any authenticated user without a role can submit events (treated as contributor).
+The calendar is designed to be embedded in your existing website (Wix, WordPress, etc.).
 
-## Pages
+### For Wix
 
-- `/` — Public calendar (embeddable)
-- `/dashboard` — Submit events and manage your submissions
-- `/admin` — Approve pending events and manage all events
-- `/sign-in` — Clerk sign-in page
-- `/sign-up` — Clerk sign-up page
-
-## Embedding in Wix
-
-Add an HTML iframe element to your Wix page:
+1. Add an **Embed HTML** element to your page
+2. Paste this code (replace with your actual URL):
 
 ```html
 <iframe
-  src="https://your-vercel-deployment.vercel.app"
+  src="https://your-calendar-url.vercel.app"
   width="100%"
   height="800"
   frameborder="0"
+  style="border: none;"
 ></iframe>
 ```
 
-The public calendar page (`/`) is designed to be embedded — it has no navigation chrome.
+### For WordPress
 
-## API Endpoints
+Use an HTML block or iframe plugin with the same embed code above.
 
-| Method | Endpoint              | Auth     | Description                           |
-| ------ | --------------------- | -------- | ------------------------------------- |
-| GET    | `/api/events`         | Public   | Get approved events (with date range) |
-| POST   | `/api/events`         | Required | Submit a new event                    |
-| PUT    | `/api/events/[id]`    | Required | Update an event                       |
-| DELETE | `/api/events/[id]`    | Required | Delete an event                       |
-| GET    | `/api/events/pending` | Admin    | Get unapproved events                 |
-| GET    | `/api/events/mine`    | Required | Get current user's events             |
+---
 
-## Deployment
+## 🔧 Technical Documentation
+
+### Tech Stack
+
+| Component   | Technology                           |
+| ----------- | ------------------------------------ |
+| Framework   | Next.js 14+ (App Router, TypeScript) |
+| Database    | Neon (serverless PostgreSQL)         |
+| ORM         | Drizzle                              |
+| Auth        | Clerk                                |
+| Calendar UI | FullCalendar.io                      |
+| Styling     | Tailwind CSS                         |
+
+### Project Structure
+
+```
+src/
+├── app/
+│   ├── page.tsx              # Public calendar
+│   ├── submit/page.tsx       # Public event submission form
+│   ├── admin/page.tsx        # Admin panel
+│   ├── dashboard/page.tsx    # User dashboard
+│   └── api/events/           # API routes
+├── components/
+│   ├── calendar/             # Calendar & modal components
+│   ├── dashboard/            # EventForm, EventList
+│   └── ui/                   # Shared UI components
+├── db/
+│   ├── index.ts              # Database connection
+│   └── schema.ts             # Drizzle schema
+└── lib/
+    ├── auth.ts               # Role checking utilities
+    └── cors.ts               # CORS helpers
+```
+
+### Environment Variables
+
+Create `.env.local` with:
+
+```bash
+DATABASE_URL=postgresql://...          # Neon connection string
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_... # Clerk publishable key
+CLERK_SECRET_KEY=sk_...                # Clerk secret key
+```
+
+### Database Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Push schema to database
+npx drizzle-kit push
+
+# Run development server
+npm run dev
+```
+
+### User Roles
+
+Set roles in Clerk Dashboard → Users → [User] → Metadata → `publicMetadata`:
+
+```json
+{ "role": "admin" }
+```
+
+| Role              | Submit           | Edit Own | Approve | Edit All | Auto-Approve |
+| ----------------- | ---------------- | -------- | ------- | -------- | ------------ |
+| Public (no login) | ✅ via `/submit` | ❌       | ❌      | ❌       | ❌           |
+| Contributor       | ✅               | ✅       | ❌      | ❌       | ❌           |
+| Admin             | ✅               | ✅       | ✅      | ✅       | ✅           |
+
+### API Endpoints
+
+| Method | Endpoint              | Auth     | Description                            |
+| ------ | --------------------- | -------- | -------------------------------------- |
+| GET    | `/api/events`         | Public   | Get approved events                    |
+| POST   | `/api/events`         | Required | Submit event (auto-approves for admin) |
+| POST   | `/api/events/public`  | Public   | Public submission (always pending)     |
+| PUT    | `/api/events/[id]`    | Required | Update event                           |
+| DELETE | `/api/events/[id]`    | Required | Delete event                           |
+| GET    | `/api/events/pending` | Admin    | Get pending events                     |
+| GET    | `/api/events/mine`    | Required | Get user's events                      |
+
+### Spam Prevention (Public Form)
+
+The public submission form (`/submit`) includes:
+
+- **Honeypot field** — Hidden field that bots fill, humans don't
+- **Time-based check** — Rejects forms filled in under 3 seconds
+- **Rate limiting** — 5 submissions per hour per IP address
+- **Input validation** — Length limits, email format, required fields
+
+### Form Validation
+
+| Field        | Rules                                 |
+| ------------ | ------------------------------------- |
+| Title        | Required, max 200 chars               |
+| Start Date   | Required, not more than 1 day in past |
+| End Date     | Must be after start time              |
+| Name         | Required (public form), max 100 chars |
+| Email        | Required (public form), valid format  |
+| Organization | Required (public form), max 200 chars |
+| Description  | Max 2000 chars                        |
+
+### Deployment
 
 Deploy to Vercel:
 
@@ -122,6 +206,29 @@ Deploy to Vercel:
 vercel
 ```
 
-Or connect your GitHub repo to Vercel for automatic deployments.
+Or connect your GitHub repo for automatic deployments.
 
-Remember to add environment variables in Vercel project settings.
+**Required Vercel Environment Variables:**
+
+- `DATABASE_URL`
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+- `CLERK_SECRET_KEY`
+
+---
+
+## 🎨 Branding
+
+The calendar uses TRAILS brand colors:
+
+| Color      | Hex       | Usage                        |
+| ---------- | --------- | ---------------------------- |
+| Lime Green | `#b5d334` | Primary buttons, headers     |
+| Teal       | `#00a99d` | Default event color, accents |
+| Orange     | `#f7941d` | Highlights                   |
+| Cyan       | `#29abe2` | Links, secondary actions     |
+
+---
+
+## 📝 License
+
+MIT
