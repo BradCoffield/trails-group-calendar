@@ -3,11 +3,11 @@
 import { useState, useMemo } from "react";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { PendingEventsTable, AllEventsTable } from "@/components/admin";
+import { PendingEventsTable, AllEventsTable, UsersTable } from "@/components/admin";
 
 import { EventForm } from "@/components/dashboard";
 
-type Tab = "pending" | "all" | "create";
+type Tab = "pending" | "all" | "create" | "users";
 
 export default function AdminPage() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -106,6 +106,16 @@ export default function AdminPage() {
             >
               + Create Event
             </button>
+            <button
+              onClick={() => setActiveTab("users")}
+              className={`pb-3 text-sm font-medium ${
+                activeTab === "users"
+                  ? "border-b-2 border-blue-500 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Users
+            </button>
           </nav>
         </div>
 
@@ -143,6 +153,15 @@ export default function AdminPage() {
                 }}
                 submitLabel="Create Event"
               />
+            </div>
+          )}
+          {activeTab === "users" && (
+            <div>
+              <h2 className="mb-4 text-lg font-medium text-gray-900">User Management</h2>
+              <p className="mb-6 text-sm text-gray-600">
+                Manage user roles. Admins have full access. Contributors can submit events.
+              </p>
+              <UsersTable />
             </div>
           )}
         </div>
