@@ -6,14 +6,14 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
-import { EventClickArg, DatesSetArg } from "@fullcalendar/core";
+import { EventClickArg, DatesSetArg, EventInput } from "@fullcalendar/core";
 import EventModal from "./EventModal";
 
 interface CalendarEvent {
   id: string;
   title: string;
   start: string;
-  end?: string;
+  end: string | null;
   allDay: boolean;
   description: string | null;
   location: string | null;
@@ -25,7 +25,7 @@ interface CalendarEvent {
 }
 
 export default function Calendar() {
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<EventInput[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -35,8 +35,13 @@ export default function Calendar() {
         `/api/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,
       );
       if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
+        const data: CalendarEvent[] = await response.json();
+        // Convert null end dates to undefined for FullCalendar
+        const formattedData: EventInput[] = data.map((event) => ({
+          ...event,
+          end: event.end || undefined,
+        }));
+        setEvents(formattedData);
       }
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -52,11 +57,12 @@ export default function Calendar() {
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const event = arg.event;
+    const endStr = event.end ? event.end.toISOString() : null;
     setSelectedEvent({
       id: event.id,
       title: event.title,
       start: event.startStr,
-      end: event.endStr || undefined,
+      end: endStr,
       allDay: event.allDay,
       description: event.extendedProps.description || null,
       location: event.extendedProps.location || null,
