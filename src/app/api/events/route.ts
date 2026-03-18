@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
       description: event.description,
       location: event.location,
       color: event.color,
+      approved: event.approved,
+      createdAt: event.createdAt?.toISOString() || new Date().toISOString(),
       extendedProps: {
         submittedByName: event.submittedByName,
         submittedByOrg: event.submittedByOrg,

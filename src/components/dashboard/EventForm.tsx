@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import ColorPicker from "@/components/ui/ColorPicker";
 
 export interface EventFormData {
@@ -34,17 +36,33 @@ interface EventFormProps {
   showSubmitterFields?: boolean;
 }
 
-function addMinutes(dateTimeStr: string, minutes: number): string {
-  if (!dateTimeStr) return "";
-  const date = new Date(dateTimeStr);
-  date.setMinutes(date.getMinutes() + minutes);
-  return date.toISOString().slice(0, 16);
+function addMinutes(date: Date | null, minutes: number): Date | null {
+  if (!date) return null;
+  const newDate = new Date(date);
+  newDate.setMinutes(newDate.getMinutes() + minutes);
+  return newDate;
 }
 
-function getDefaultStartTime(): string {
+function getDefaultStartTime(): Date {
   const now = new Date();
   now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
-  return now.toISOString().slice(0, 16);
+  return now;
+}
+
+function dateToString(date: Date | null): string {
+  if (!date) return "";
+  // Format as local datetime string for form submission
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function stringToDate(str: string): Date | null {
+  if (!str) return null;
+  return new Date(str);
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -58,7 +76,7 @@ export default function EventForm({
 }: EventFormProps) {
   const [formData, setFormData] = useState<EventFormData>({
     title: initialData?.title || "",
-    start_time: initialData?.start_time || getDefaultStartTime(),
+    start_time: initialData?.start_time || dateToString(getDefaultStartTime()),
     end_time: initialData?.end_time || "",
     all_day: initialData?.all_day || false,
     location: initialData?.location || "",
@@ -68,33 +86,45 @@ export default function EventForm({
     submitted_by_name: initialData?.submitted_by_name || "",
     submitted_by_email: initialData?.submitted_by_email || "",
   });
+
+  // Internal Date objects for the date picker
+  const [startDate, setStartDate] = useState<Date | null>(
+    initialData?.start_time ? stringToDate(initialData.start_time) : getDefaultStartTime(),
+  );
+  const [endDate, setEndDate] = useState<Date | null>(
+    initialData?.end_time ? stringToDate(initialData.end_time) : null,
+  );
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [hasAutoFilledEnd, setHasAutoFilledEnd] = useState(false);
 
+  // Sync Date objects to form data strings
   useEffect(() => {
-    if (
-      formData.start_time &&
-      !formData.end_time &&
-      !formData.all_day &&
-      !hasAutoFilledEnd &&
-      !initialData?.end_time
-    ) {
-      setFormData((prev) => ({
-        ...prev,
-        end_time: addMinutes(prev.start_time, 60),
-      }));
+    setFormData((prev) => ({
+      ...prev,
+      start_time: dateToString(startDate),
+      end_time: dateToString(endDate),
+    }));
+  }, [startDate, endDate]);
+
+  // Handle start date change - auto-set end time to 60 minutes later
+  const handleStartDateChange = (date: Date | null) => {
+    setStartDate(date);
+    if (date && !formData.all_day) {
+      setEndDate(addMinutes(date, 60));
+    }
+  };
+
+  // Auto-fill end time on initial mount only
+  useEffect(() => {
+    if (startDate && !endDate && !formData.all_day && !hasAutoFilledEnd && !initialData?.end_time) {
+      setEndDate(addMinutes(startDate, 60));
       setHasAutoFilledEnd(true);
     }
-  }, [
-    formData.start_time,
-    formData.end_time,
-    formData.all_day,
-    hasAutoFilledEnd,
-    initialData?.end_time,
-  ]);
+  }, [startDate, endDate, formData.all_day, hasAutoFilledEnd, initialData?.end_time]);
 
   const validateField = (name: string, value: string): string | undefined => {
     switch (name) {
@@ -186,9 +216,12 @@ export default function EventForm({
     try {
       await onSubmit(formData);
       if (!initialData) {
+        const newStart = getDefaultStartTime();
+        setStartDate(newStart);
+        setEndDate(null);
         setFormData({
           title: "",
-          start_time: getDefaultStartTime(),
+          start_time: dateToString(newStart),
           end_time: "",
           all_day: false,
           location: "",
@@ -257,32 +290,47 @@ export default function EventForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="start_time" className="block text-sm font-medium text-gray-700">
-            Start Date/Time *
-          </label>
-          <input
-            type={formData.all_day ? "date" : "datetime-local"}
-            id="start_time"
-            required
-            value={formData.start_time}
-            onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date/Time *</label>
+          <DatePicker
+            selected={startDate}
+            onChange={handleStartDateChange}
             onBlur={() => handleBlur("start_time")}
+            showTimeSelect={!formData.all_day}
+            timeFormat="h:mm aa"
+            timeIntervals={15}
+            timeCaption="Time"
+            dateFormat={formData.all_day ? "MMMM d, yyyy" : "MMMM d, yyyy h:mm aa"}
             className={inputClassName("start_time")}
+            wrapperClassName="w-full"
+            placeholderText="Select date and time"
           />
           {renderFieldError("start_time")}
         </div>
         <div>
-          <label htmlFor="end_time" className="block text-sm font-medium text-gray-700">
-            End Date/Time
-          </label>
-          <input
-            type={formData.all_day ? "date" : "datetime-local"}
-            id="end_time"
-            value={formData.end_time}
-            min={formData.start_time}
-            onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+          <label className="block text-sm font-medium text-gray-700 mb-1">End Date/Time</label>
+          <DatePicker
+            selected={endDate}
+            onChange={(date: Date | null) => setEndDate(date)}
             onBlur={() => handleBlur("end_time")}
+            showTimeSelect={!formData.all_day}
+            timeFormat="h:mm aa"
+            timeIntervals={15}
+            timeCaption="Time"
+            dateFormat={formData.all_day ? "MMMM d, yyyy" : "MMMM d, yyyy h:mm aa"}
+            minDate={startDate ?? undefined}
+            minTime={
+              startDate && endDate && startDate.toDateString() === endDate.toDateString()
+                ? startDate
+                : undefined
+            }
+            maxTime={
+              startDate && endDate && startDate.toDateString() === endDate.toDateString()
+                ? new Date(new Date().setHours(23, 59, 59))
+                : undefined
+            }
             className={inputClassName("end_time")}
+            wrapperClassName="w-full"
+            placeholderText="Select end time"
           />
           {renderFieldError("end_time")}
         </div>

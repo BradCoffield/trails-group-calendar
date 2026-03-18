@@ -1,19 +1,16 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import EventForm, { EventFormData } from "@/components/dashboard/EventForm";
 
 export default function PublicSubmitPage() {
-  const formStartedAt = useRef<number | null>(null);
+  const formStartedAt = useRef<number>(0);
   const [submitted, setSubmitted] = useState(false);
   const [honeypot, setHoneypot] = useState("");
 
-  const getFormStartTime = useCallback(() => {
-    if (formStartedAt.current === null) {
-      formStartedAt.current = Date.now();
-    }
-    return formStartedAt.current;
+  useEffect(() => {
+    formStartedAt.current = Date.now();
   }, []);
 
   const handleSubmit = async (data: EventFormData) => {
@@ -23,7 +20,7 @@ export default function PublicSubmitPage() {
       body: JSON.stringify({
         ...data,
         website: honeypot, // Honeypot field
-        form_started_at: getFormStartTime().toString(),
+        form_started_at: formStartedAt.current.toString(),
       }),
     });
 

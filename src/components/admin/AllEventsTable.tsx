@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { EventForm } from '@/components/dashboard';
+import { useState, useEffect, useCallback } from "react";
+import { EventForm } from "@/components/dashboard";
 
 interface AdminEvent {
   id: string;
@@ -28,20 +28,20 @@ export default function AllEventsTable() {
   const fetchAllEvents = useCallback(async () => {
     try {
       const [approvedRes, pendingRes] = await Promise.all([
-        fetch('/api/events'),
-        fetch('/api/events/pending'),
+        fetch("/api/events"),
+        fetch("/api/events/pending"),
       ]);
 
       const approved = approvedRes.ok ? await approvedRes.json() : [];
       const pending = pendingRes.ok ? await pendingRes.json() : [];
 
       const allEvents = [...approved, ...pending].sort(
-        (a, b) => new Date(b.start).getTime() - new Date(a.start).getTime()
+        (a, b) => new Date(b.start).getTime() - new Date(a.start).getTime(),
       );
 
       setEvents(allEvents);
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error("Error fetching events:", error);
     } finally {
       setLoading(false);
     }
@@ -52,15 +52,15 @@ export default function AllEventsTable() {
   }, [fetchAllEvents]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
+    if (!confirm("Are you sure you want to delete this event?")) return;
 
     try {
-      const response = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/events/${id}`, { method: "DELETE" });
       if (response.ok) {
         setEvents(events.filter((e) => e.id !== id));
       }
     } catch (error) {
-      console.error('Error deleting event:', error);
+      console.error("Error deleting event:", error);
     }
   };
 
@@ -77,13 +77,13 @@ export default function AllEventsTable() {
     if (!editingEvent) return;
 
     const response = await fetch(`/api/events/${editingEvent.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to update event');
+      throw new Error("Failed to update event");
     }
 
     setEditingEvent(null);
@@ -92,9 +92,9 @@ export default function AllEventsTable() {
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -110,11 +110,11 @@ export default function AllEventsTable() {
           initialData={{
             title: editingEvent.title,
             start_time: editingEvent.start.slice(0, 16),
-            end_time: editingEvent.end?.slice(0, 16) || '',
+            end_time: editingEvent.end?.slice(0, 16) || "",
             all_day: editingEvent.allDay,
-            location: editingEvent.location || '',
-            submitted_by_org: editingEvent.extendedProps.submittedByOrg || '',
-            description: editingEvent.description || '',
+            location: editingEvent.location || "",
+            submitted_by_org: editingEvent.extendedProps.submittedByOrg || "",
+            description: editingEvent.description || "",
             color: editingEvent.color,
           }}
           onSubmit={handleUpdate}
@@ -126,11 +126,7 @@ export default function AllEventsTable() {
   }
 
   if (events.length === 0) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        No events found.
-      </div>
-    );
+    return <div className="text-center py-8 text-gray-500">No events found.</div>;
   }
 
   return (
@@ -175,12 +171,10 @@ export default function AllEventsTable() {
               <td className="px-4 py-3 whitespace-nowrap">
                 <span
                   className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    event.approved
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                    event.approved ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
                   }`}
                 >
-                  {event.approved ? 'Approved' : 'Pending'}
+                  {event.approved ? "Approved" : "Needs Review"}
                 </span>
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-right text-sm">

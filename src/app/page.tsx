@@ -28,7 +28,9 @@ export default function Home() {
             Submit Event
           </Link>
         </div>
-        <Calendar />
+        <div className="h-[calc(100vh-140px)] min-h-[500px]">
+          <Calendar />
+        </div>
       </div>
     </main>
   );
