@@ -92,6 +92,33 @@ export default function UsersTable() {
     }
   };
 
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete ${userName}? This cannot be undone.`)) {
+      return;
+    }
+
+    setUpdating(userId);
+    try {
+      const response = await fetch("/api/admin/delete-user", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        setUsers(users.filter((u) => u.id !== userId));
+      } else {
+        const error = await response.json();
+        alert(error.error || "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Failed to delete user");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString(undefined, {
       month: "short",
@@ -221,6 +248,12 @@ export default function UsersTable() {
                             Remove Role
                           </button>
                         )}
+                        <button
+                          onClick={() => handleDeleteUser(user.id, user.name)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Delete
+                        </button>
                       </div>
                     )}
                   </td>
