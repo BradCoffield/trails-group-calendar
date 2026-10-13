@@ -48,6 +48,15 @@ export default function Home() {
         <div className="rounded-xl bg-white p-4 shadow-xl ring-1 ring-black/5 h-[calc(100vh-160px)] min-h-[500px]">
           <Calendar />
         </div>
+
+        <div className="mt-4 text-center">
+          <Link
+            href="/admin"
+            className="text-xs text-slate-500 hover:text-[#00a99d] transition-colors"
+          >
+            Calendar Administrators Login
+          </Link>
+        </div>
       </div>
     </main>
   );
