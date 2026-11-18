@@ -5,6 +5,7 @@ export const events = pgTable("events", {
   title: text("title").notNull(),
   startTime: timestamp("start_time", { withTimezone: true }).notNull(),
   endTime: timestamp("end_time", { withTimezone: true }),
+  timeZone: text("time_zone").notNull().default("America/Denver"),
   allDay: boolean("all_day").default(false),
   description: text("description"),
   location: text("location"),

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import EventForm from './EventForm';
-import { CALENDAR_TIME_ZONE, toCalendarDateTimeInput } from '@/lib/timezone';
+import { CALENDAR_TIME_ZONE, toZonedDateTimeInput } from '@/lib/timezone';
 
 interface MyEvent {
   id: string;
@@ -18,6 +18,7 @@ interface MyEvent {
   extendedProps: {
     submittedByName: string;
     submittedByOrg: string | null;
+    timeZone: string;
   };
 }
 
@@ -61,6 +62,7 @@ export default function MyEventsTable() {
     title: string;
     start_time: string;
     end_time: string;
+    time_zone: string;
     all_day: boolean;
     location: string;
     submitted_by_org: string;
@@ -83,9 +85,9 @@ export default function MyEventsTable() {
     fetchEvents();
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string, timeZone: string) => {
     return new Date(dateStr).toLocaleDateString(undefined, {
-      timeZone: CALENDAR_TIME_ZONE,
+      timeZone,
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -103,8 +105,17 @@ export default function MyEventsTable() {
         <EventForm
           initialData={{
             title: editingEvent.title,
-            start_time: toCalendarDateTimeInput(editingEvent.start),
-            end_time: editingEvent.end ? toCalendarDateTimeInput(editingEvent.end) : '',
+            start_time: toZonedDateTimeInput(
+              editingEvent.start,
+              editingEvent.extendedProps.timeZone || CALENDAR_TIME_ZONE,
+            ),
+            end_time: editingEvent.end
+              ? toZonedDateTimeInput(
+                  editingEvent.end,
+                  editingEvent.extendedProps.timeZone || CALENDAR_TIME_ZONE,
+                )
+              : '',
+            time_zone: editingEvent.extendedProps.timeZone || CALENDAR_TIME_ZONE,
             all_day: editingEvent.allDay,
             location: editingEvent.location || '',
             submitted_by_org: editingEvent.extendedProps.submittedByOrg || '',
@@ -159,7 +170,7 @@ export default function MyEventsTable() {
                 </div>
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                {formatDate(event.start)}
+                {formatDate(event.start, event.extendedProps.timeZone || CALENDAR_TIME_ZONE)}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <span

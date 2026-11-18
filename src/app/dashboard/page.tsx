@@ -36,6 +36,7 @@ export default function DashboardPage() {
     title: string;
     start_time: string;
     end_time: string;
+    time_zone: string;
     all_day: boolean;
     location: string;
     submitted_by_org: string;

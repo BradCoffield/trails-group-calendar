@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/db';
 import { events } from '@/db/schema';
 import { corsResponse, corsOptionsResponse } from '@/lib/cors';
-import { parseCalendarDateTime } from '@/lib/timezone';
+import { CALENDAR_TIME_ZONE, isValidTimeZone, parseCalendarDateTime } from '@/lib/timezone';
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       title,
       start_time,
       end_time,
+      time_zone,
       all_day,
       description,
       location,
@@ -96,13 +97,19 @@ export async function POST(request: NextRequest) {
       return corsResponse({ error: 'Invalid email address' }, 400);
     }
 
+    if (time_zone !== undefined && !isValidTimeZone(time_zone)) {
+      return corsResponse({ error: 'Invalid time zone' }, 400);
+    }
+    const timeZone = time_zone || CALENDAR_TIME_ZONE;
+
     // Create event (always unapproved for public submissions)
     const [newEvent] = await db
       .insert(events)
       .values({
         title: title.slice(0, 200), // Limit title length
-        startTime: parseCalendarDateTime(start_time),
-        endTime: end_time ? parseCalendarDateTime(end_time) : null,
+        startTime: parseCalendarDateTime(start_time, timeZone),
+        endTime: end_time ? parseCalendarDateTime(end_time, timeZone) : null,
+        timeZone,
         allDay: all_day || false,
         description: description?.slice(0, 2000) || null, // Limit description
         location: location?.slice(0, 200) || null,

@@ -18,6 +18,7 @@ interface PendingEvent {
     submittedByName: string;
     submittedByOrg: string | null;
     submittedByUserId: string;
+    timeZone: string;
   };
 }
 
@@ -71,32 +72,38 @@ export default function PendingEventsTable() {
     }
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string, timeZone: string) => {
     return new Date(dateStr).toLocaleDateString(undefined, {
-      timeZone: CALENDAR_TIME_ZONE,
+      timeZone,
       month: "short",
       day: "numeric",
       year: "numeric",
     });
   };
 
-  const formatTime = (dateStr: string) => {
+  const formatTime = (dateStr: string, timeZone: string) => {
     return new Date(dateStr).toLocaleTimeString(undefined, {
-      timeZone: CALENDAR_TIME_ZONE,
+      timeZone,
+      timeZoneName: "short",
       hour: "numeric",
       minute: "2-digit",
     });
   };
 
-  const formatDateTime = (start: string, end: string | null, allDay: boolean) => {
-    const startDate = formatDate(start);
+  const formatDateTime = (
+    start: string,
+    end: string | null,
+    allDay: boolean,
+    timeZone: string,
+  ) => {
+    const startDate = formatDate(start, timeZone);
     if (allDay) {
       return `${startDate} (All day)`;
     }
-    const startTime = formatTime(start);
+    const startTime = formatTime(start, timeZone);
     if (end) {
-      const endDate = formatDate(end);
-      const endTime = formatTime(end);
+      const endDate = formatDate(end, timeZone);
+      const endTime = formatTime(end, timeZone);
       if (startDate === endDate) {
         return `${startDate}, ${startTime} - ${endTime}`;
       }
@@ -158,7 +165,12 @@ export default function PendingEventsTable() {
                   />
                 </svg>
                 <span className="text-gray-700">
-                  {formatDateTime(event.start, event.end, event.allDay)}
+                  {formatDateTime(
+                    event.start,
+                    event.end,
+                    event.allDay,
+                    event.extendedProps.timeZone || CALENDAR_TIME_ZONE,
+                  )}
                 </span>
               </div>
 
@@ -226,7 +238,13 @@ export default function PendingEventsTable() {
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span className="text-gray-500">Submitted {formatDate(event.createdAt)}</span>
+                <span className="text-gray-500">
+                  Submitted{" "}
+                  {formatDate(
+                    event.createdAt,
+                    event.extendedProps.timeZone || CALENDAR_TIME_ZONE,
+                  )}
+                </span>
               </div>
             </div>
 

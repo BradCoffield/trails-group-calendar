@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { events } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { corsResponse, corsOptionsResponse } from "@/lib/cors";
-import { parseCalendarDateTime } from "@/lib/timezone";
+import { CALENDAR_TIME_ZONE, isValidTimeZone, parseCalendarDateTime } from "@/lib/timezone";
 
 export async function OPTIONS() {
   return corsOptionsResponse();
@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
       extendedProps: {
         submittedByName: event.submittedByName,
         submittedByOrg: event.submittedByOrg,
+        timeZone: event.timeZone,
       },
     }));
 
@@ -70,12 +71,26 @@ export async function POST(request: NextRequest) {
         : user.emailAddresses[0]?.emailAddress || "Unknown User";
 
     const body = await request.json();
-    const { title, start_time, end_time, all_day, description, location, submitted_by_org, color } =
-      body;
+    const {
+      title,
+      start_time,
+      end_time,
+      time_zone,
+      all_day,
+      description,
+      location,
+      submitted_by_org,
+      color,
+    } = body;
 
     if (!title || !start_time) {
       return corsResponse({ error: "Title and start time are required" }, 400);
     }
+
+    if (time_zone !== undefined && !isValidTimeZone(time_zone)) {
+      return corsResponse({ error: "Invalid time zone" }, 400);
+    }
+    const timeZone = time_zone || CALENDAR_TIME_ZONE;
 
     const role = user.publicMetadata?.role as string | undefined;
     const shouldAutoApprove = role === "admin";
@@ -84,8 +99,9 @@ export async function POST(request: NextRequest) {
       .insert(events)
       .values({
         title,
-        startTime: parseCalendarDateTime(start_time),
-        endTime: end_time ? parseCalendarDateTime(end_time) : null,
+        startTime: parseCalendarDateTime(start_time, timeZone),
+        endTime: end_time ? parseCalendarDateTime(end_time, timeZone) : null,
+        timeZone,
         allDay: all_day || false,
         description: description || null,
         location: location || null,

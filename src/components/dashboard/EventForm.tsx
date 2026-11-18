@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ColorPicker from "@/components/ui/ColorPicker";
-import { calendarNow } from "@/lib/timezone";
+import { CALENDAR_TIME_ZONE, TIME_ZONE_OPTIONS, calendarNow } from "@/lib/timezone";
 
 export interface EventFormData {
   title: string;
   start_time: string;
   end_time: string;
+  time_zone: string;
   all_day: boolean;
   location: string;
   submitted_by_org: string;
@@ -84,6 +85,7 @@ export default function EventForm({
     title: initialData?.title || "",
     start_time: initialData?.start_time || dateToString(getDefaultStartTime()),
     end_time: initialData?.end_time || "",
+    time_zone: initialData?.time_zone || CALENDAR_TIME_ZONE,
     all_day: initialData?.all_day || false,
     location: initialData?.location || "",
     submitted_by_org: initialData?.submitted_by_org || "",
@@ -231,6 +233,7 @@ export default function EventForm({
           title: "",
           start_time: dateToString(newStart),
           end_time: "",
+          time_zone: CALENDAR_TIME_ZONE,
           all_day: false,
           location: "",
           submitted_by_org: "",
@@ -343,6 +346,29 @@ export default function EventForm({
           {renderFieldError("end_time")}
         </div>
       </div>
+
+      {!formData.all_day && (
+        <div>
+          <label htmlFor="time_zone" className="block text-sm font-medium text-gray-700">
+            Time Zone
+          </label>
+          <select
+            id="time_zone"
+            value={formData.time_zone}
+            onChange={(e) => setFormData({ ...formData, time_zone: e.target.value })}
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            {TIME_ZONE_OPTIONS.map((tz) => (
+              <option key={tz.value} value={tz.value}>
+                {tz.label}
+              </option>
+            ))}
+            {!TIME_ZONE_OPTIONS.some((tz) => tz.value === formData.time_zone) && (
+              <option value={formData.time_zone}>{formData.time_zone}</option>
+            )}
+          </select>
+        </div>
+      )}
 
       <div>
         <label htmlFor="location" className="block text-sm font-medium text-gray-700">

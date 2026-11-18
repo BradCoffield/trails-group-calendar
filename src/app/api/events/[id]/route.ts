@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { events } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { corsResponse, corsOptionsResponse } from "@/lib/cors";
-import { parseCalendarDateTime } from "@/lib/timezone";
+import { isValidTimeZone, parseCalendarDateTime } from "@/lib/timezone";
 
 export async function OPTIONS() {
   return corsOptionsResponse();
@@ -38,6 +38,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       title,
       start_time,
       end_time,
+      time_zone,
       all_day,
       description,
       location,
@@ -46,14 +47,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       approved,
     } = body;
 
+    if (time_zone !== undefined && !isValidTimeZone(time_zone)) {
+      return corsResponse({ error: "Invalid time zone" }, 400);
+    }
+    // Naive datetimes are interpreted in the event's effective zone
+    const effectiveTimeZone = time_zone || existingEvent.timeZone;
+
     const updateData: Record<string, unknown> = {
       updatedAt: new Date(),
     };
 
     if (title !== undefined) updateData.title = title;
-    if (start_time !== undefined) updateData.startTime = parseCalendarDateTime(start_time);
+    if (time_zone !== undefined) updateData.timeZone = time_zone;
+    if (start_time !== undefined)
+      updateData.startTime = parseCalendarDateTime(start_time, effectiveTimeZone);
     if (end_time !== undefined)
-      updateData.endTime = end_time ? parseCalendarDateTime(end_time) : null;
+      updateData.endTime = end_time ? parseCalendarDateTime(end_time, effectiveTimeZone) : null;
     if (all_day !== undefined) updateData.allDay = all_day;
     if (description !== undefined) updateData.description = description;
     if (location !== undefined) updateData.location = location;

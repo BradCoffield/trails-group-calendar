@@ -31,6 +31,7 @@ export async function GET() {
       extendedProps: {
         submittedByName: event.submittedByName,
         submittedByOrg: event.submittedByOrg,
+        timeZone: event.timeZone,
       },
     }));
 

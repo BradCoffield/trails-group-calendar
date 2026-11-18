@@ -15,6 +15,7 @@ interface CalendarEvent {
   extendedProps: {
     submittedByName: string;
     submittedByOrg: string | null;
+    timeZone: string;
   };
 }
 
@@ -24,11 +25,11 @@ interface EventModalProps {
   onClose: () => void;
 }
 
-function formatDateTime(dateStr: string, allDay: boolean): string {
+function formatDateTime(dateStr: string, allDay: boolean, timeZone: string): string {
   const date = new Date(dateStr);
   if (allDay) {
     return date.toLocaleDateString(undefined, {
-      timeZone: CALENDAR_TIME_ZONE,
+      timeZone,
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -36,7 +37,8 @@ function formatDateTime(dateStr: string, allDay: boolean): string {
     });
   }
   return date.toLocaleString(undefined, {
-    timeZone: CALENDAR_TIME_ZONE,
+    timeZone,
+    timeZoneName: "short",
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -138,10 +140,21 @@ export default function EventModal({ event, isOpen, onClose }: EventModalProps) 
             </div>
             <div>
               <p className="font-medium text-gray-900">
-                {formatDateTime(event.start, event.allDay)}
+                {formatDateTime(
+                  event.start,
+                  event.allDay,
+                  event.extendedProps.timeZone || CALENDAR_TIME_ZONE,
+                )}
               </p>
               {event.end && !event.allDay && (
-                <p className="text-sm text-gray-500">to {formatDateTime(event.end, false)}</p>
+                <p className="text-sm text-gray-500">
+                  to{" "}
+                  {formatDateTime(
+                    event.end,
+                    false,
+                    event.extendedProps.timeZone || CALENDAR_TIME_ZONE,
+                  )}
+                </p>
               )}
             </div>
           </div>

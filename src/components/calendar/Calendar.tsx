@@ -8,7 +8,7 @@ import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import { EventClickArg, DatesSetArg, EventInput } from "@fullcalendar/core";
 import EventModal from "./EventModal";
-import { CALENDAR_TIME_ZONE } from "@/lib/timezone";
+import { CALENDAR_TIME_ZONE, toZonedDateTimeInput } from "@/lib/timezone";
 
 interface CalendarEvent {
   id: string;
@@ -22,6 +22,7 @@ interface CalendarEvent {
   extendedProps: {
     submittedByName: string;
     submittedByOrg: string | null;
+    timeZone: string;
   };
 }
 
@@ -30,18 +31,40 @@ export default function Calendar() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchEvents = useCallback(async (start: string, end: string) => {
+  const fetchEvents = useCallback(async (startStr: string, endStr: string) => {
     try {
+      // Widen the range: the API filters on instants, but events are
+      // displayed at wall time in their own zones (up to ±14h skew)
+      const start = new Date(startStr);
+      start.setUTCDate(start.getUTCDate() - 2);
+      const end = new Date(endStr);
+      end.setUTCDate(end.getUTCDate() + 2);
+
       const response = await fetch(
-        `/api/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,
+        `/api/events?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`,
       );
       if (response.ok) {
         const data: CalendarEvent[] = await response.json();
-        // Convert null end dates to undefined for FullCalendar
-        const formattedData: EventInput[] = data.map((event) => ({
-          ...event,
-          end: event.end || undefined,
-        }));
+        // Feed FullCalendar naive wall-time strings in each event's own
+        // zone (calendar timeZone="UTC" renders them verbatim); the real
+        // instants stay in extendedProps for the modal
+        const formattedData: EventInput[] = data.map((event) => {
+          const tz = event.extendedProps.timeZone || CALENDAR_TIME_ZONE;
+          const wallStart = toZonedDateTimeInput(event.start, tz);
+          const wallEnd = event.end ? toZonedDateTimeInput(event.end, tz) : undefined;
+          return {
+            ...event,
+            start: event.allDay ? wallStart.slice(0, 10) : wallStart,
+            end: wallEnd ? (event.allDay ? wallEnd.slice(0, 10) : wallEnd) : undefined,
+            extendedProps: {
+              ...event.extendedProps,
+              description: event.description,
+              location: event.location,
+              startInstant: event.start,
+              endInstant: event.end,
+            },
+          };
+        });
         setEvents(formattedData);
       }
     } catch (error) {
@@ -58,12 +81,11 @@ export default function Calendar() {
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const event = arg.event;
-    const endStr = event.end ? event.end.toISOString() : null;
     setSelectedEvent({
       id: event.id,
       title: event.title,
-      start: event.startStr,
-      end: endStr,
+      start: event.extendedProps.startInstant,
+      end: event.extendedProps.endInstant || null,
       allDay: event.allDay,
       description: event.extendedProps.description || null,
       location: event.extendedProps.location || null,
@@ -71,6 +93,7 @@ export default function Calendar() {
       extendedProps: {
         submittedByName: event.extendedProps.submittedByName,
         submittedByOrg: event.extendedProps.submittedByOrg,
+        timeZone: event.extendedProps.timeZone,
       },
     });
     setIsModalOpen(true);
@@ -89,7 +112,7 @@ export default function Calendar() {
         events={events}
         eventClick={handleEventClick}
         datesSet={handleDatesSet}
-        timeZone={CALENDAR_TIME_ZONE}
+        timeZone="UTC"
         height="100%"
         eventDisplay="block"
         dayMaxEvents={3}

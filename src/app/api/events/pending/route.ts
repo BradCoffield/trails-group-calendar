@@ -37,6 +37,7 @@ export async function GET() {
         submittedByName: event.submittedByName,
         submittedByOrg: event.submittedByOrg,
         submittedByUserId: event.submittedByUserId,
+        timeZone: event.timeZone,
       },
     }));
 

@@ -6,6 +6,7 @@ CREATE TABLE events (
   title TEXT NOT NULL,
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ,
+  time_zone TEXT NOT NULL DEFAULT 'America/Denver',
   all_day BOOLEAN DEFAULT false,
   description TEXT,
   location TEXT,

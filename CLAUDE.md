@@ -32,7 +32,7 @@ Public routes (no auth required, defined in `src/middleware.ts`): `/`, `/embed`,
 
 ### Database
 
-Single `events` table defined in `src/db/schema.ts` (Drizzle ORM). Key fields: `approved` (boolean, default false), `submitted_by_user_id` (set to `public:<email>` for anonymous submissions), `color` (hex, default `#00a99d`). Connection in `src/db/index.ts` using `@neondatabase/serverless`. Schema changes: edit `src/db/schema.ts` then run `npx drizzle-kit push`. Generated migrations go in `/drizzle`.
+Single `events` table defined in `src/db/schema.ts` (Drizzle ORM). Key fields: `approved` (boolean, default false), `submitted_by_user_id` (set to `public:<email>` for anonymous submissions), `color` (hex, default `#00a99d`), `time_zone` (IANA name, default `America/Denver`). Connection in `src/db/index.ts` using `@neondatabase/serverless`. Schema changes: edit `src/db/schema.ts` then run `npx drizzle-kit push`. Generated migrations go in `/drizzle`.
 
 > **Note:** Rate limiting in `/api/events/public` is in-memory (`Map`). It resets on cold starts and does not share state across serverless instances.
 
@@ -85,7 +85,7 @@ NEXT_PUBLIC_CALENDAR_TIME_ZONE               # Optional; defaults to "America/De
 
 ### Timezone Convention
 
-All event times are wall-clock times in `CALENDAR_TIME_ZONE` (Mountain Time). The DB stores `timestamptz` instants; naive form strings like `2026-11-18T10:00` are interpreted as calendar-zone wall time by `parseCalendarDateTime()` in `src/lib/timezone.ts`, and every display layer (FullCalendar `timeZone`, `toLocaleString`/`toLocaleDateString` calls) renders back into the same zone. Never parse form datetimes with bare `new Date()` — that uses the server's timezone (UTC in production).
+Each event has a `time_zone` (IANA name, defaults to `America/Denver` via `NEXT_PUBLIC_CALENDAR_TIME_ZONE`). The DB stores `timestamptz` instants; naive form strings like `2026-11-18T10:00` are wall time in the event's zone, parsed by `parseCalendarDateTime(value, timeZone)` in `src/lib/timezone.ts`. Display: calendars run FullCalendar with `timeZone="UTC"` and are fed naive wall-time strings (per `toZonedDateTimeInput`), so each event renders at its own zone's wall clock; the real instants ride along in `extendedProps.startInstant/endInstant` for the modal, which formats with the event's zone + `timeZoneName: "short"`. Never parse form datetimes with bare `new Date()` — that uses the server's timezone (UTC in production).
 
 ### TypeScript Path Alias
 
