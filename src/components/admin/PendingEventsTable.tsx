@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { CALENDAR_TIME_ZONE } from "@/lib/timezone";
 
 interface PendingEvent {
   id: string;
@@ -72,6 +73,7 @@ export default function PendingEventsTable() {
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString(undefined, {
+      timeZone: CALENDAR_TIME_ZONE,
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -80,6 +82,7 @@ export default function PendingEventsTable() {
 
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleTimeString(undefined, {
+      timeZone: CALENDAR_TIME_ZONE,
       hour: "numeric",
       minute: "2-digit",
     });

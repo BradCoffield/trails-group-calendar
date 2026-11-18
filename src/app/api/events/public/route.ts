@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/db';
 import { events } from '@/db/schema';
 import { corsResponse, corsOptionsResponse } from '@/lib/cors';
+import { parseCalendarDateTime } from '@/lib/timezone';
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
@@ -100,8 +101,8 @@ export async function POST(request: NextRequest) {
       .insert(events)
       .values({
         title: title.slice(0, 200), // Limit title length
-        startTime: new Date(start_time),
-        endTime: end_time ? new Date(end_time) : null,
+        startTime: parseCalendarDateTime(start_time),
+        endTime: end_time ? parseCalendarDateTime(end_time) : null,
         allDay: all_day || false,
         description: description?.slice(0, 2000) || null, // Limit description
         location: location?.slice(0, 200) || null,

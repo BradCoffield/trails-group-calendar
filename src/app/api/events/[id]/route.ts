@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { events } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { corsResponse, corsOptionsResponse } from "@/lib/cors";
+import { parseCalendarDateTime } from "@/lib/timezone";
 
 export async function OPTIONS() {
   return corsOptionsResponse();
@@ -50,8 +51,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     };
 
     if (title !== undefined) updateData.title = title;
-    if (start_time !== undefined) updateData.startTime = new Date(start_time);
-    if (end_time !== undefined) updateData.endTime = end_time ? new Date(end_time) : null;
+    if (start_time !== undefined) updateData.startTime = parseCalendarDateTime(start_time);
+    if (end_time !== undefined)
+      updateData.endTime = end_time ? parseCalendarDateTime(end_time) : null;
     if (all_day !== undefined) updateData.allDay = all_day;
     if (description !== undefined) updateData.description = description;
     if (location !== undefined) updateData.location = location;

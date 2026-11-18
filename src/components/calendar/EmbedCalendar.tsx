@@ -7,6 +7,7 @@ import listPlugin from "@fullcalendar/list";
 import interactionPlugin from "@fullcalendar/interaction";
 import { EventClickArg, DatesSetArg, EventInput } from "@fullcalendar/core";
 import EventModal from "./EventModal";
+import { CALENDAR_TIME_ZONE } from "@/lib/timezone";
 
 interface CalendarEvent {
   id: string;
@@ -87,7 +88,7 @@ export default function EmbedCalendar() {
         events={events}
         eventClick={handleEventClick}
         datesSet={handleDatesSet}
-        timeZone="local"
+        timeZone={CALENDAR_TIME_ZONE}
         height="100%"
         eventDisplay="block"
         dayMaxEvents={3}

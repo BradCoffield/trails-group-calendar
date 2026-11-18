@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { EventForm } from "@/components/dashboard";
+import { CALENDAR_TIME_ZONE, toCalendarDateTimeInput } from "@/lib/timezone";
 
 interface AdminEvent {
   id: string;
@@ -102,6 +103,7 @@ export default function AllEventsTable() {
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString(undefined, {
+      timeZone: CALENDAR_TIME_ZONE,
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -166,8 +168,8 @@ export default function AllEventsTable() {
         <EventForm
           initialData={{
             title: editingEvent.title,
-            start_time: editingEvent.start.slice(0, 16),
-            end_time: editingEvent.end?.slice(0, 16) || "",
+            start_time: toCalendarDateTimeInput(editingEvent.start),
+            end_time: editingEvent.end ? toCalendarDateTimeInput(editingEvent.end) : "",
             all_day: editingEvent.allDay,
             location: editingEvent.location || "",
             submitted_by_org: editingEvent.extendedProps.submittedByOrg || "",

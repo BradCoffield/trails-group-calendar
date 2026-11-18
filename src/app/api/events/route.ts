@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { events } from "@/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { corsResponse, corsOptionsResponse } from "@/lib/cors";
+import { parseCalendarDateTime } from "@/lib/timezone";
 
 export async function OPTIONS() {
   return corsOptionsResponse();
@@ -83,8 +84,8 @@ export async function POST(request: NextRequest) {
       .insert(events)
       .values({
         title,
-        startTime: new Date(start_time),
-        endTime: end_time ? new Date(end_time) : null,
+        startTime: parseCalendarDateTime(start_time),
+        endTime: end_time ? parseCalendarDateTime(end_time) : null,
         allDay: all_day || false,
         description: description || null,
         location: location || null,

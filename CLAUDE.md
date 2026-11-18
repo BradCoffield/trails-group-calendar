@@ -63,7 +63,8 @@ src/
 ├── db/                       # Drizzle schema + Neon connection
 ├── lib/
 │   ├── auth.ts               # Role-checking helpers (server-side, uses currentUser())
-│   └── cors.ts               # CORS helpers: corsResponse(), corsOptionsResponse()
+│   ├── cors.ts               # CORS helpers: corsResponse(), corsOptionsResponse()
+│   └── timezone.ts           # CALENDAR_TIME_ZONE + parse/format helpers
 ├── styles/calendar.css       # FullCalendar overrides
 └── types/clerk.d.ts          # Clerk type augmentations
 ```
@@ -79,7 +80,12 @@ NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
 NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL=/admin
 NEXT_PUBLIC_APP_URL                          # Production URL (used for Clerk invite redirect)
+NEXT_PUBLIC_CALENDAR_TIME_ZONE               # Optional; defaults to "America/Denver"
 ```
+
+### Timezone Convention
+
+All event times are wall-clock times in `CALENDAR_TIME_ZONE` (Mountain Time). The DB stores `timestamptz` instants; naive form strings like `2026-11-18T10:00` are interpreted as calendar-zone wall time by `parseCalendarDateTime()` in `src/lib/timezone.ts`, and every display layer (FullCalendar `timeZone`, `toLocaleString`/`toLocaleDateString` calls) renders back into the same zone. Never parse form datetimes with bare `new Date()` — that uses the server's timezone (UTC in production).
 
 ### TypeScript Path Alias
 

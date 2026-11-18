@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { CALENDAR_TIME_ZONE } from "@/lib/timezone";
 
 interface CalendarEvent {
   id: string;
@@ -27,6 +28,7 @@ function formatDateTime(dateStr: string, allDay: boolean): string {
   const date = new Date(dateStr);
   if (allDay) {
     return date.toLocaleDateString(undefined, {
+      timeZone: CALENDAR_TIME_ZONE,
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -34,6 +36,7 @@ function formatDateTime(dateStr: string, allDay: boolean): string {
     });
   }
   return date.toLocaleString(undefined, {
+    timeZone: CALENDAR_TIME_ZONE,
     weekday: "long",
     year: "numeric",
     month: "long",

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ColorPicker from "@/components/ui/ColorPicker";
+import { calendarNow } from "@/lib/timezone";
 
 export interface EventFormData {
   title: string;
@@ -44,25 +45,30 @@ function addMinutes(date: Date | null, minutes: number): Date | null {
 }
 
 function getDefaultStartTime(): Date {
-  const now = new Date();
+  const now = calendarNow();
   now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
   return now;
 }
 
-function dateToString(date: Date | null): string {
+function dateToString(date: Date | null, allDay = false, shiftDays = 0): string {
   if (!date) return "";
-  // Format as local datetime string for form submission
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
+  // Format as a naive datetime string; the server interprets it as wall time
+  // in the calendar's timezone
+  const d = new Date(date);
+  d.setDate(d.getDate() + shiftDays);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = allDay ? "00" : String(d.getHours()).padStart(2, "0");
+  const minutes = allDay ? "00" : String(d.getMinutes()).padStart(2, "0");
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-function stringToDate(str: string): Date | null {
+function stringToDate(str: string, shiftDays = 0): Date | null {
   if (!str) return null;
-  return new Date(str);
+  const d = new Date(str);
+  d.setDate(d.getDate() + shiftDays);
+  return d;
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -92,7 +98,8 @@ export default function EventForm({
     initialData?.start_time ? stringToDate(initialData.start_time) : getDefaultStartTime(),
   );
   const [endDate, setEndDate] = useState<Date | null>(
-    initialData?.end_time ? stringToDate(initialData.end_time) : null,
+    // Stored all-day end times are exclusive; show the inclusive last day
+    initialData?.end_time ? stringToDate(initialData.end_time, initialData.all_day ? -1 : 0) : null,
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,10 +112,11 @@ export default function EventForm({
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
-      start_time: dateToString(startDate),
-      end_time: dateToString(endDate),
+      start_time: dateToString(startDate, prev.all_day),
+      // All-day end dates are submitted as the exclusive day after
+      end_time: dateToString(endDate, prev.all_day, prev.all_day ? 1 : 0),
     }));
-  }, [startDate, endDate]);
+  }, [startDate, endDate, formData.all_day]);
 
   // Handle start date change - auto-set end time to 60 minutes later
   const handleStartDateChange = (date: Date | null) => {
